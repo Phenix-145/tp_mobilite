@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'infofilm.dart';
 
+
 void main() {
   runApp(const MyApp());
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -23,6 +23,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -35,21 +36,52 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _searchResults = [];
+
   String apiKey = 'de6c2959';
+
+
+  Future<void> _showErrorDialog(String message) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Erreur'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
 
   Future<void> _searchMovies() async {
     final String searchTerm = _searchController.text;
 
     final response = await http.get(
-        Uri.parse('http://www.omdbapi.com/?t=$searchTerm&apikey=$apiKey'));
+        Uri.parse('http://www.omdbapi.com/?s=$searchTerm&apikey=$apiKey'));
 
     if (response.statusCode == 200) {
+
       Map<String, dynamic> data = json.decode(response.body);
-      setState(() {
-        _searchResults = data['Search'];
-      });
+      if (data['Search'] != null) {
+        setState(() {
+          _searchResults = data['Search'];
+        });
+      } else {
+        print('Aucun résultat trouvé.');
+        _showErrorDialog('Aucun résultat trouvé pour la recherche spécifiée.');
+      }
     } else {
       print('Erreur de recherche');
+      _showErrorDialog('Erreur de recherche. Veuillez réessayer.');
     }
   }
 
@@ -67,8 +99,10 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     } else {
       print('Erreur de récupération des détails du film');
+      _showErrorDialog('Erreur : information du film inaccessible. Veuillez réessayer.');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
